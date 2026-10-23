@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TTD Darshan Fill</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    width: 400px;
+    padding: 10px;
+    background: #fff;
+    color: #000;
+    margin: 0;
+  }
+  h2 { font-size: 14px; margin: 0 0 10px 0; text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 8px; }
+  .tabs { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 10px; }
+  .tab-btn {
+    padding: 4px 9px; cursor: pointer; background: #eee;
+    border: 1px solid #aaa; border-radius: 3px; font-size: 12px; font-family: Arial;
+  }
+  .tab-btn.active { background: #900; color: #fff; border-color: #700; }
+  .pilgrim-panel { display: none; }
+  .pilgrim-panel.active { display: block; }
+  .row { display: flex; align-items: center; margin-bottom: 7px; }
+  .row label { width: 120px; font-size: 12px; font-weight: bold; flex-shrink: 0; }
+  .row input, .row select {
+    flex: 1; padding: 4px 6px; border: 1px solid #999;
+    font-size: 12px; font-family: Arial; box-sizing: border-box;
+  }
+  .btns { display: flex; gap: 6px; margin-top: 10px; }
+  button {
+    padding: 5px 14px; font-size: 12px; cursor: pointer;
+    border: 1px solid #888; background: #eee; border-radius: 3px; font-family: Arial;
+  }
+  .btn-save  { background: #1a6a1a; color:#fff; border-color:#145214; }
+  .btn-fill  { background: #1a4fa0; color:#fff; border-color:#0a3070; }
+  .btn-clear { background: #900;    color:#fff; border-color:#600; }
+  .btn-fillall { background: #555; color:#fff; border-color:#333; }
+  #status { margin-top: 8px; font-size: 12px; min-height: 16px; color: green; }
+  #status.err { color: red; }
+</style>
+</head>
+<body>
+<h2>TTD Darshan — Pilgrim Details</h2>
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
+<div class="btns">
+  <button class="btn-fillall" onclick="fillAll()">⚡ Fill ALL on Page</button>
+</div>
+<div id="status"></div>
+
+<script>
+const N = 6;
+const ID_OPTS = ['Aadhaar Card','Passport','Voter ID','Driving Licence','PAN Card'];
+const GEN_OPTS = ['Male','Female','Other'];
+
+// Default empty pilgrim
+function empty() {
+  return { name:'', age:'', gender:'', idProof:'Aadhaar Card', idNumber:'' };
+}
+
+let data = Array.from({length: N}, empty);
+
+// Build UI first — no dependency on storage
+const tabsEl   = document.getElementById('tabs');
+const panelsEl = document.getElementById('panels');
+
+for (let i = 0; i < N; i++) {
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+  btn.textContent = 'P' + (i + 1);
+  btn.onclick = () => switchTab(i);
+  tabsEl.appendChild(btn);
+
+  const panel = document.createElement('div');
+  panel.className = 'pilgrim-panel' + (i === 0 ? ' active' : '');
+  panel.id = 'panel-' + i;
+  panel.innerHTML =
+    row('Name *',         `<input type="text"   id="name-${i}"     placeholder="Full name">`) +
+    row('Age *',          `<input type="number" id="age-${i}"      placeholder="Age" min="1" max="120">`) +
+    row('Gender *',       `<select id="gender-${i}"><option value="">-- Select --</option>${GEN_OPTS.map(g=>`<option>${g}</option>`).join('')}</select>`) +
+    row('Photo ID Proof', `<select id="idProof-${i}">${ID_OPTS.map(o=>`<option>${o}</option>`).join('')}</select>`) +
+    row('Photo ID No *',  `<input type="text"   id="idNumber-${i}" placeholder="ID number">`) +
+    `<div class="btns">
+       <button class="btn-save"  onclick="save(${i})">💾 Save</button>
+       <button class="btn-fill"  onclick="fillOne(${i})">⚡ Fill Person ${i+1}</button>
+       <button class="btn-clear" onclick="clearOne(${i})">🗑 Clear</button>
+     </div>`;
+  panelsEl.appendChild(panel);
+}
+
+function row(label, input) {
+  return `<div class="row"><label>${label}</label>${input}</div>`;
+}
+
+// Load from storage — safe wrapper
+function loadStorage() {
+  try {
+    chrome.storage.local.get('ttd_pilgrims', function(res) {
+      if (chrome.runtime.lastError) { return; }
+      if (res && res.ttd_pilgrims && Array.isArray(res.ttd_pilgrims)) {
+        data = res.ttd_pilgrims;
+        // Pad if needed
+        while (data.length < N) data.push(empty());
+      }
+      renderAll();
+    });
+  } catch(e) {
+    // storage not available, just show empty form
+  }
+}
+
+function saveStorage() {
+  try {
+    chrome.storage.local.set({ ttd_pilgrims: data }, function() {});
+  } catch(e) {}
+}
+
+function switchTab(i) {
+  document.querySelectorAll('.tab-btn').forEach((b,idx) => b.classList.toggle('active', idx===i));
+  document.querySelectorAll('.pilgrim-panel').forEach((p,idx) => p.classList.toggle('active', idx===i));
+}
+
+function getFields(i) {
+  return {
+    name:     document.getElementById('name-'+i).value.trim(),
+    age:      document.getElementById('age-'+i).value.trim(),
+    gender:   document.getElementById('gender-'+i).value,
+    idProof:  document.getElementById('idProof-'+i).value,
+    idNumber: document.getElementById('idNumber-'+i).value.trim(),
+  };
+}
+
+function renderAll() {
+  for (let i = 0; i < N; i++) {
+    const d = data[i] || empty();
+    document.getElementById('name-'+i).value     = d.name     || '';
+    document.getElementById('age-'+i).value      = d.age      || '';
+    document.getElementById('gender-'+i).value   = d.gender   || '';
+    document.getElementById('idProof-'+i).value  = d.idProof  || 'Aadhaar Card';
+    document.getElementById('idNumber-'+i).value = d.idNumber || '';
+  }
+}
+
+function save(i) {
+  const d = getFields(i);
+  if (!d.name) { showStatus('Enter a name first', true); return; }
+  data[i] = d;
+  saveStorage();
+  showStatus('Pilgrim ' + (i+1) + ' saved ✓');
+}
+
+function clearOne(i) {
+  data[i] = empty();
+  saveStorage();
+  document.getElementById('name-'+i).value     = '';
+  document.getElementById('age-'+i).value      = '';
+  document.getElementById('gender-'+i).value   = '';
+  document.getElementById('idProof-'+i).value  = 'Aadhaar Card';
+  document.getElementById('idNumber-'+i).value = '';
+  showStatus('Pilgrim ' + (i+1) + ' cleared');
+}
+
+function fillOne(i) {
+  const d = data[i];
+  if (!d.name) { showStatus('Save pilgrim ' + (i+1) + ' first', true); return; }
+  sendFill([{ pilgrimIndex: i, profile: d }]);
+}
+
+function fillAll() {
+  const toFill = [];
+  for (let i = 0; i < N; i++) {
+    if (data[i] && data[i].name) toFill.push({ pilgrimIndex: i, profile: data[i] });
+  }
+  if (toFill.length === 0) { showStatus('No saved pilgrims found', true); return; }
+  sendFill(toFill);
+}
+
+function sendFill(list) {
+  try {
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      if (!tabs || !tabs[0]) { showStatus('No active tab', true); return; }
+      chrome.tabs.sendMessage(tabs[0].id, { action: 'fill', list: list }, function(res) {
+        if (chrome.runtime.lastError) {
+          showStatus('Open the TTD booking page first!', true);
+          return;
+        }
+        if (res && res.ok) showStatus('Filled ' + res.count + ' field(s) ✓');
+        else showStatus('Could not fill — check the page', true);
+      });
+    });
+  } catch(e) {
+    showStatus('Error: ' + e.message, true);
+  }
+}
+
+function showStatus(msg, isErr) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = isErr ? 'err' : '';
+  setTimeout(() => { el.textContent = ''; el.className = ''; }, 3000);
+}
+
+// Init
+loadStorage();
+</script>
+</body>
+</html>

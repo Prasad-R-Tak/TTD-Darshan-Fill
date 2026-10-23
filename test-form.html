@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Registration Form</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; font-size: 13px; }
+  h2 { text-align: center; }
+  .person-block { border: 1px solid #ddd; border-radius: 6px; padding: 14px 18px; margin-bottom: 16px; }
+  .person-block h3 { margin: 0 0 12px 0; font-size: 14px; }
+  .fields { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field.name { flex: 2; min-width: 140px; }
+  .field.age  { flex: 1; min-width: 60px; }
+  .field.gender { flex: 1; min-width: 100px; }
+  .field.idproof { flex: 1.5; min-width: 130px; }
+  .field.idnum { flex: 2; min-width: 140px; }
+  label { font-size: 11px; color: #555; }
+  label span { color: red; }
+  input, select { padding: 6px; border: none; border-bottom: 1px solid #999; font-size: 13px; width: 100%; box-sizing: border-box; }
+</style>
+</head>
+<body>
+<h2>Registration Form (Online Special Entry Darshan)</h2>
+
+<script>
+var persons = [1,2,3,4,5,6];
+persons.forEach(function(n) {
+  document.write(`
+  <div class="person-block">
+    <h3>Person ${n}</h3>
+    <div class="fields">
+      <div class="field name">
+        <label>Name <span>*</span></label>
+        <input type="text" name="name_${n}" id="name_${n}" placeholder="">
+      </div>
+      <div class="field age">
+        <label>Age <span>*</span></label>
+        <input type="number" name="age_${n}" id="age_${n}" placeholder="">
+      </div>
+      <div class="field gender">
+        <label>Gender <span>*</span></label>
+        <select name="gender_${n}" id="gender_${n}">
+          <option value="">Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field idproof">
+        <label>Photo ID Proof <span>*</span></label>
+        <select name="idProof_${n}" id="idProof_${n}">
+          <option value="">Select ID</option>
+          <option value="Aadhaar Card">Aadhaar Card</option>
+          <option value="Passport">Passport</option>
+          <option value="Voter ID">Voter ID</option>
+          <option value="Driving Licence">Driving Licence</option>
+          <option value="PAN Card">PAN Card</option>
+        </select>
+      </div>
+      <div class="field idnum">
+        <label>Photo ID Number <span>*</span></label>
+        <input type="text" name="idNumber_${n}" id="idNumber_${n}" placeholder="">
+      </div>
+    </div>
+  </div>`);
+});
+</script>
+</body>
+</html>

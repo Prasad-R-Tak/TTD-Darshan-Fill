@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "TTD Darshan Fill",
+  "version": "1.0",
+  "description": "Fill TTD Special Entry Darshan pilgrim details.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": { "48": "icons/icon.png" }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
